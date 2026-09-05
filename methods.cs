@@ -8,6 +8,25 @@ public class CPHInline
     // required for actions
     public bool Execute() => true;
 
+    public enum BroadcastTarget
+    {
+        All,
+        Controller,
+        Viewer
+    }
+
+    public enum BroadcastEvent
+    {
+        Update,
+        Clear
+    }
+
+    public record BroadcastEnvelope(
+        [property: JsonProperty("target")] BroadcastTarget Target,
+        [property: JsonProperty("event")] BroadcastEvent Event,
+        [property: JsonProperty("data")] string Data
+    );
+
     public class DrawRequest
     {
         [JsonProperty("color")]
@@ -63,7 +82,18 @@ public class CPHInline
 
     public bool BroadcastQueue()
     {
-        
+        List<string> drawQueue = CPH.GetGlobalVar<List<string>>("drawQueue") ?? new List<string>();
+
+        var payload = new BroadcastEnvelope(
+            Target: BroadcastTarget.All,
+            Event: BroadcastEvent.Update,
+            Data: drawQueue
+        );
+
+        string payloadJson = JsonConvert.SerializeObject(payload);
+        CPH.WebsocketBroadcastJson(payload);
+
+        return true;
     }
 
     public bool CompleteRequest(string userId)
@@ -82,13 +112,14 @@ public class CPHInline
 
     public bool ClearQueue()
     {
-        
+        // clear user vars
+        // clear global var
 
         BroadcastQueue();
     }
 
     public bool PauseQueue()
     {
-        
+        // disable new requests from command
     }
 }
