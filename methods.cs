@@ -206,11 +206,19 @@ public class CPHInline
         return true;
     }
 
-    public bool ClearQueue()
+    public bool ClearDrawQueue()
     {
-        // clear user vars
-        // clear global var
+        List<string> drawQueue = CPH.GetGlobalVar<List<string>>("drawQueue");
+        if (drawQueue == null) return true; // nothing to do
 
+        // user vars first while they're still valid
+        foreach (var userId in drawQueue)
+        {
+            CPH.SetTwitchUserVarById(userId, "drawRequest", null);
+        }
+
+        // drawQueue
+        CPH.SetGlobalVar("drawQueue", new List<string>());
         BroadcastDrawQueue();
 
         return true;
