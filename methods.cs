@@ -27,11 +27,17 @@ public class CPHInline
         UnpauseQueue
     }
 
-    public record BroadcastEnvelope(
-        [property: JsonProperty("target")] BroadcastTarget Target,
-        [property: JsonProperty("event")] BroadcastEvent Event,
-        [property: JsonProperty("data", NullValueHandling = NullValueHandling.Ignore)] object? Data = null
-    );
+    public class BroadcastEnvelope
+    {
+        [JsonProperty("target")]
+        public BroadcastTarget Target { get; set; } = BroadcastTarget.All;
+
+        [JsonProperty("event")]
+        public BroadcastEvent Event { get; set; } = BroadcastEvent.DrawQueueUpdate;
+
+        [JsonProperty("data", NullValueHandling = NullValueHandling.Ignore)]
+        public object? Data { get; set; } = null;
+    }
 
     public class DrawRequest
     {
@@ -51,10 +57,14 @@ public class CPHInline
         public bool Completed { get; set; } = false;
     }
 
-    public record DrawRequestDetails(
-        [property: JsonProperty("userInfo")] TwitchUserInfo UserInfo,
-        [property: JsonProperty("request")] DrawRequest Request
-    );
+    public class DrawRequestDetails
+    {
+        [JsonProperty("userInfo")]
+        public TwitchUserInfo UserInfo { get; set; } = new TwitchUserInfo();
+
+        [JsonProperty("request")]
+        public DrawRequest Request { get; set; } = new DrawRequest();
+    }
 
     private DrawRequestDetails? GetDetails(string userId)
     {
@@ -70,10 +80,11 @@ public class CPHInline
             return null;
         }
 
-        return new DrawRequestDetails(
-            UserInfo: twitchUser,
-            Request: request
-        );
+        return new DrawRequestDetails
+        {
+            UserInfo = twitchUser, 
+            Request = request
+        };
     }
 
     public bool AddOrUpdate(string userId, string color, string prompt)
@@ -140,11 +151,12 @@ public class CPHInline
             drawDetails.Add(details);
         }
 
-        var payload = new BroadcastEnvelope(
-            Target: BroadcastTarget.All,
-            Event: eventType,
-            Data: drawDetails
-        );
+        var payload = new BroadcastEnvelope
+        {
+            Target = BroadcastTarget.All,
+            Event = eventType,
+            Data = drawDetails
+        };
 
         string payloadJson = JsonConvert.SerializeObject(payload);
         CPH.WebsocketBroadcastJson(payloadJson);
@@ -246,10 +258,11 @@ public class CPHInline
         // disable new requests from command
         CPH.SetGlobalVar("isQueueOpen", false);
         
-        var payload = new BroadcastEnvelope(
-            Target: BroadcastTarget.All,
-            Event: BroadcastEvent.PauseQueue
-        );
+        var payload = new BroadcastEnvelope
+        {
+            Target = BroadcastTarget.All,
+            Event = BroadcastEvent.PauseQueue
+        };
 
         string payloadJson = JsonConvert.SerializeObject(payload);
         CPH.WebsocketBroadcastJson(payloadJson);
@@ -262,10 +275,11 @@ public class CPHInline
         // enable new requests from command
         CPH.SetGlobalVar("isQueueOpen", true);
     
-        var payload = new BroadcastEnvelope(
-            Target: BroadcastTarget.All,
-            Event: BroadcastEvent.UnpauseQueue
-        );
+        var payload = new BroadcastEnvelope
+        {
+            Target = BroadcastTarget.All,
+            Event = BroadcastEvent.UnpauseQueue
+        };
 
         string payloadJson = JsonConvert.SerializeObject(payload);
         CPH.WebsocketBroadcastJson(payloadJson);
