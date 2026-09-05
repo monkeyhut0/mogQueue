@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Streamer.bot.Plugin.Interface;
+using Streamer.bot.Plugin.Interface.Model;
 
 public class CPHInline
 {
@@ -28,7 +29,7 @@ public class CPHInline
     public record BroadcastEnvelope(
         [property: JsonProperty("target")] BroadcastTarget Target,
         [property: JsonProperty("event")] BroadcastEvent Event,
-        [property: JsonProperty("data")] string Data
+        [property: JsonProperty("data")] object Data
     );
 
     public class DrawRequest
@@ -49,10 +50,30 @@ public class CPHInline
         public bool Completed { get; set; } = false;
     }
 
-    public record CompletedRequest(
-        [property: JsonProperty("userId")] string UserId,
+    public record DrawRequestDetails(
+        [property: JsonProperty("userInfo")] TwitchUserInfo UserInfo,
         [property: JsonProperty("request")] DrawRequest Request
     );
+
+    private DrawRequestDetails? GetDetails(string userId)
+    {
+        var request = CPH.GetTwitchUserVarById<DrawRequest>(userId, "drawRequest");
+        if (request == null)
+        {
+            return null;
+        }
+
+        var twitchUser = CPH.TwitchGetUserInfoById(userId);
+        if (twitchUser == null)
+        {
+            return null;
+        }
+
+        return new DrawRequestDetails(
+            UserInfo: twitchUser,
+            Request: request
+        );
+    }
 
     public bool AddOrUpdate(string userId, string color, string prompt)
     {
@@ -85,38 +106,47 @@ public class CPHInline
             CPH.SetGlobalVar("drawQueue", drawQueue);
         }
 
-        BroadcastQueue();
+        BroadcastDrawQueue();
         return true;
     }
 
-    public bool BroadcastQueue()
+    public bool BroadcastDrawQueue()
     {
         List<string> drawQueue = CPH.GetGlobalVar<List<string>>("drawQueue") ?? new List<string>();
 
-        var payload = new BroadcastEnvelope(
-            Target: BroadcastTarget.All,
-            Event: BroadcastEvent.DrawQueueUpdate,
-            Data: drawQueue
-        );
-
-        string payloadJson = JsonConvert.SerializeObject(payload);
-        CPH.WebsocketBroadcastJson(payload);
-
-        return true;
+        return BroadcastQueue(drawQueue);
     }
 
     public bool BroadcastCompletedQueue()
     {
-        List<string> completedQueue = CPH.GetGlobalVar<List<string>>("completedQueue") ?? new List<string>();
+        List<string> completedQueue = CPH.GetGlobalVar<List<string>>("completedQueue") ?? [];
+
+        return BroadcastQueue(completedQueue);
+    }
+
+    private bool BroadcastQueue(List<string> userIds)
+    {
+        // convert ordered list to list of details
+        List<DrawRequestDetails> drawDetails = [];
+        foreach (var userId in userIds)
+        {
+            var details = GetDetails(userId);
+            if (details == null)
+            {
+                CPH.LogInfo($"BroadcastQueue: User {userId} has no details, skipping.");
+                continue;
+            }
+            drawDetails.Add(details);
+        }
 
         var payload = new BroadcastEnvelope(
             Target: BroadcastTarget.All,
-            Event: BroadcastEvent.CompletedQueueUpdate,
-            Data: completedQueue
+            Event: BroadcastEvent.DrawQueueUpdate,
+            Data: drawDetails
         );
 
         string payloadJson = JsonConvert.SerializeObject(payload);
-        CPH.WebsocketBroadcastJson(payload);
+        CPH.WebsocketBroadcastJson(payloadJson);
 
         return true;
     }
@@ -126,7 +156,7 @@ public class CPHInline
         CPH.LogInfo($"Completing request for user {userId}.");
         
         // drawQueue
-        List<string> drawQueue = CPH.GetGlobalVar<List<string>>("drawQueue") ?? new List<string>();
+        List<string> drawQueue = CPH.GetGlobalVar<List<string>>("drawQueue") ?? [];
         if (!drawQueue.Contains(userId))
         {
             CPH.LogInfo($"Completing request failed. User {userId} not found in draw queue.");
@@ -134,11 +164,10 @@ public class CPHInline
         }        
         drawQueue.Remove(userId);
         CPH.SetGlobalVar("drawQueue", drawQueue);
-        BroadcastQueue();
+        BroadcastDrawQueue();
         
         // completed queue
-        var completedRequest = new CompletedRequest(userId, CPH.GetTwitchUserVarById<DrawRequest>(userId, "drawRequest"));
-        List<string> completedQueue = CPH.GetGlobalVar<List<string>>("completedQueue") ?? new List<string>();
+        List<string> completedQueue = CPH.GetGlobalVar<List<string>>("completedQueue") ?? [];
         completedQueue.Add(userId);
         CPH.SetGlobalVar("completedQueue", completedQueue);
         BroadcastCompletedQueue();
@@ -159,7 +188,7 @@ public class CPHInline
     public bool RejectRequest(string userId)
     {
 
-        BroadcastQueue();
+        BroadcastDrawQueue();
 
         return true;
     }
@@ -169,7 +198,7 @@ public class CPHInline
         // clear user vars
         // clear global var
 
-        BroadcastQueue();
+        BroadcastDrawQueue();
 
         return true;
     }
