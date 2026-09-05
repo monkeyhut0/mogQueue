@@ -17,7 +17,8 @@ public class CPHInline
 
     public enum BroadcastEvent
     {
-        Update,
+        DrawQueueUpdate,
+        CompletedQueueUpdate,
         Clear
     }
 
@@ -86,8 +87,24 @@ public class CPHInline
 
         var payload = new BroadcastEnvelope(
             Target: BroadcastTarget.All,
-            Event: BroadcastEvent.Update,
+            Event: BroadcastEvent.DrawQueueUpdate,
             Data: drawQueue
+        );
+
+        string payloadJson = JsonConvert.SerializeObject(payload);
+        CPH.WebsocketBroadcastJson(payload);
+
+        return true;
+    }
+
+    public bool BroadcastCompletedQueue()
+    {
+        List<string> completedQueue = CPH.GetGlobalVar<List<string>>("completedQueue") ?? new List<string>();
+
+        var payload = new BroadcastEnvelope(
+            Target: BroadcastTarget.All,
+            Event: BroadcastEvent.CompletedQueueUpdate,
+            Data: completedQueue
         );
 
         string payloadJson = JsonConvert.SerializeObject(payload);
