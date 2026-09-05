@@ -39,6 +39,28 @@ public class CPHInline
         public object? Data { get; set; } = null;
     }
 
+    public enum InboundEvent
+    {
+        GetDrawQueue,
+        GetCompletedQueue,
+        CompleteRequest,
+        RejectRequest,
+        ClearDrawQueue,
+        ClearCompletedQueue,
+        ClearAllQueues,
+        PauseQueue,
+        UnpauseQueue
+    }
+
+    public class InboundEnvelope
+    {
+        [JsonProperty("event")]
+        public InboundEvent? Event { get; set; } = null;
+
+        [JsonProperty("data", NullValueHandling = NullValueHandling.Ignore)]
+        public object? Data { get; set; } = null;
+    }
+
     public class DrawRequest
     {
         [JsonProperty("color")]
@@ -176,18 +198,8 @@ public class CPHInline
         return true;
     }
 
-    public bool CompleteRequest()
+    public bool CompleteRequest(string userId)
     {
-        // args
-        if 
-        (
-            CPH.TryGetArg("userId", out string userId)
-        ) 
-        {
-            CPH.LogWarn($"CompleteRequest: Missing required arguments.");
-            return false;
-        }
-
         CPH.LogInfo($"Completing request for user {userId}.");
         
         // drawQueue
@@ -220,18 +232,8 @@ public class CPHInline
         return true;
     }
 
-    public bool RejectRequest()
+    public bool RejectRequest(string userId)
     {
-        // args
-        if 
-        (
-            CPH.TryGetArg("userId", out string userId)
-        ) 
-        {
-            CPH.LogWarn($"RejectRequest: Missing required arguments.");
-            return false;
-        }
-
         CPH.LogInfo($"Rejecting request for user {userId}.");
         
         // drawQueue
@@ -315,6 +317,71 @@ public class CPHInline
 
         string payloadJson = JsonConvert.SerializeObject(payload);
         CPH.WebsocketBroadcastJson(payloadJson);
+
+        return true;
+    }
+
+    public bool WebsocketHandler()
+    {
+        // args
+        if
+        (
+            CPH.TryGetArg("data", out string data)
+        )
+        {
+            CPH.LogWarn($"WebsocketHandler: Missing data.");
+            return false;
+        }
+
+        // parse inbound envelope
+        InboundEnvelope? inbound = JsonConvert.DeserializeObject<InboundEnvelope>(data);
+        if (inbound == null || inbound.Event == null)
+        {
+            CPH.LogWarn($"WebsocketHandler: Invalid inbound envelope. Data: {data}");
+            return false;
+        }
+
+        // handle inbound event
+        switch (inbound.Event)
+        {
+            case InboundEvent.GetDrawQueue:
+                BroadcastDrawQueue();
+                break;
+            case InboundEvent.GetCompletedQueue:
+                BroadcastCompletedQueue();
+                break;
+            case InboundEvent.CompleteRequest:
+                if (inbound.Data is string completeUserId)
+                {
+                    CompleteRequest(completeUserId);
+                }
+                break;
+            case InboundEvent.RejectRequest:
+                if (inbound.Data is string rejectUserId)
+                {
+                    RejectRequest(rejectUserId);
+                }
+                break;
+            case InboundEvent.ClearDrawQueue:
+                ClearDrawQueue();
+                break;
+            case InboundEvent.ClearCompletedQueue:
+                ClearCompletedQueue();
+                break;
+            case InboundEvent.ClearAllQueues:
+                ClearDrawQueue();
+                ClearCompletedQueue();
+                break;
+            case InboundEvent.PauseQueue:
+                PauseQueue();
+                break;
+            case InboundEvent.UnpauseQueue:
+                UnpauseQueue();
+                break;
+            default:
+                CPH.LogWarn($"WebsocketHandler: Unknown inbound event: {inbound.Event}");
+                return false;
+        }
 
         return true;
     }
