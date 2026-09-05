@@ -114,17 +114,17 @@ public class CPHInline
     {
         List<string> drawQueue = CPH.GetGlobalVar<List<string>>("drawQueue") ?? new List<string>();
 
-        return BroadcastQueue(drawQueue);
+        return BroadcastQueue(drawQueue, BroadcastEvent.DrawQueueUpdate);
     }
 
     public bool BroadcastCompletedQueue()
     {
         List<string> completedQueue = CPH.GetGlobalVar<List<string>>("completedQueue") ?? [];
 
-        return BroadcastQueue(completedQueue);
+        return BroadcastQueue(completedQueue, BroadcastEvent.CompletedQueueUpdate);
     }
 
-    private bool BroadcastQueue(List<string> userIds)
+    private bool BroadcastQueue(List<string> userIds, BroadcastEvent eventType = BroadcastEvent.DrawQueueUpdate)
     {
         // convert ordered list to list of details
         List<DrawRequestDetails> drawDetails = [];
@@ -141,7 +141,7 @@ public class CPHInline
 
         var payload = new BroadcastEnvelope(
             Target: BroadcastTarget.All,
-            Event: BroadcastEvent.DrawQueueUpdate,
+            Event: eventType,
             Data: drawDetails
         );
 
