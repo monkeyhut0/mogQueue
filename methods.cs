@@ -23,13 +23,14 @@ public class CPHInline
     {
         DrawQueueUpdate,
         CompletedQueueUpdate,
-        Clear
+        PauseQueue,
+        UnpauseQueue
     }
 
     public record BroadcastEnvelope(
         [property: JsonProperty("target")] BroadcastTarget Target,
         [property: JsonProperty("event")] BroadcastEvent Event,
-        [property: JsonProperty("data")] object Data
+        [property: JsonProperty("data", NullValueHandling = NullValueHandling.Ignore)] object? Data = null
     );
 
     public class DrawRequest
@@ -244,6 +245,14 @@ public class CPHInline
     {
         // disable new requests from command
         CPH.SetGlobalVar("isQueueOpen", false);
+        
+        var payload = new BroadcastEnvelope(
+            Target: BroadcastTarget.All,
+            Event: BroadcastEvent.PauseQueue
+        );
+
+        string payloadJson = JsonConvert.SerializeObject(payload);
+        CPH.WebsocketBroadcastJson(payloadJson);
 
         return true;
     }
@@ -252,6 +261,14 @@ public class CPHInline
     {
         // enable new requests from command
         CPH.SetGlobalVar("isQueueOpen", true);
+    
+        var payload = new BroadcastEnvelope(
+            Target: BroadcastTarget.All,
+            Event: BroadcastEvent.UnpauseQueue
+        );
+
+        string payloadJson = JsonConvert.SerializeObject(payload);
+        CPH.WebsocketBroadcastJson(payloadJson);
 
         return true;
     }
