@@ -46,6 +46,11 @@ public class CPHInline
         public bool Completed { get; set; } = false;
     }
 
+    public record CompletedRequest(
+        [property: JsonProperty("userId")] string UserId,
+        [property: JsonProperty("request")] DrawRequest Request
+    );
+
     public bool AddOrUpdate(string userId, string color, string prompt)
     {
         // Using List instead of Queue so that we can check user positions and arbitrary removal
@@ -115,16 +120,45 @@ public class CPHInline
 
     public bool CompleteRequest(string userId)
     {
+        CPH.LogInfo($"Completing request for user {userId}.");
         
-
+        // drawQueue
+        List<string> drawQueue = CPH.GetGlobalVar<List<string>>("drawQueue") ?? new List<string>();
+        if (!drawQueue.Contains(userId))
+        {
+            CPH.LogInfo($"Completing request failed. User {userId} not found in draw queue.");
+            return false;
+        }        
+        drawQueue.Remove(userId);
+        CPH.SetGlobalVar("drawQueue", drawQueue);
         BroadcastQueue();
+        
+        // completed queue
+        var completedRequest = new CompletedRequest(userId, CPH.GetTwtichUserVarById<DrawRequest>(userId, "drawRequest"));
+        List<string> completedQueue = CPH.GetGlobalVar<List<string>>("completedQueue") ?? new List<string>();
+        completedQueue.Add(userId);
+        CPH.SetGlobalVar("completedQueue", completedQueue);
+        BroadcastCompletedQueue();
+
+        // mark request as completed
+        DrawRequest existingRequest = CPH.GetTwtichUserVarById<DrawRequest>(userId, "drawRequest");
+        if (existingRequest == null)
+        {
+            CPH.LogInfo($"Completing request failed. User {userId} has no existing draw request.");
+            return false;
+        }
+        existingRequest.Completed = true;
+        CPH.SetTwitchUserVarById(userId, existingRequest);
+
+        return true;
     }
 
     public bool RejectRequest(string userId)
     {
-        
 
         BroadcastQueue();
+
+        return true;
     }
 
     public bool ClearQueue()
@@ -133,10 +167,23 @@ public class CPHInline
         // clear global var
 
         BroadcastQueue();
+
+        return true;
+    }
+
+    public bool ClearCompletedQueue()
+    {
+        // clear global var
+
+        BroadcastCompletedQueue();
+
+        return true;
     }
 
     public bool PauseQueue()
     {
         // disable new requests from command
+
+        return true;
     }
 }
