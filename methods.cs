@@ -243,6 +243,15 @@ public class CPHInline
     public bool PauseQueue()
     {
         // disable new requests from command
+        CPH.SetGlobalVar("isQueueOpen", false);
+
+        return true;
+    }
+
+    public bool UnpauseQueue()
+    {
+        // enable new requests from command
+        CPH.SetGlobalVar("isQueueOpen", true);
 
         return true;
     }
