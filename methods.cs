@@ -58,6 +58,7 @@ public class CPHInline
         }
 
         BroadcastQueue();
+        return true;
     }
 
     public bool BroadcastQueue()
