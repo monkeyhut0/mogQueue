@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Newtonsoft.Json;
+using Streamer.bot.Plugin.Interface;
 
 public class CPHInline
 {
+    // Declaring CPH here satisfies the compiler and provides full IntelliSense
+    public IInlineInvokeProxy CPH { get; set; } = null!;
+    
     // required for actions
     public bool Execute() => true;
 
@@ -31,10 +34,10 @@ public class CPHInline
     public class DrawRequest
     {
         [JsonProperty("color")]
-        public string Color { get; set; }
+        public string Color { get; set; } = "white";
 
         [JsonProperty("prompt")]
-        public string Prompt { get; set; }
+        public string Prompt { get; set; } = "";
 
         [JsonProperty("initialTime")]
         public long InitialTime { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -59,12 +62,12 @@ public class CPHInline
         if (drawQueue.Contains(userId))
         {
             // update existing request
-            DrawRequest existingRequest = CPH.GetTwtichUserVarById<DrawRequest>(userId, "drawRequest") ?? new DrawRequest();
+            DrawRequest existingRequest = CPH.GetTwitchUserVarById<DrawRequest>(userId, "drawRequest") ?? new DrawRequest();
             existingRequest.Color = color;
             existingRequest.Prompt = prompt;
             existingRequest.UpdateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
-            CPH.SetTwitchUserVarById(userId, existingRequest);
+            CPH.SetTwitchUserVarById(userId, "drawRequest", existingRequest);
         }
         else
         {
@@ -76,7 +79,7 @@ public class CPHInline
                 // rest are default
             };
 
-            CPH.SetTwitchUserVarById(userId, newRequest);
+            CPH.SetTwitchUserVarById(userId, "drawRequest", newRequest);
 
             drawQueue.Add(userId);
             CPH.SetGlobalVar("drawQueue", drawQueue);
@@ -134,21 +137,21 @@ public class CPHInline
         BroadcastQueue();
         
         // completed queue
-        var completedRequest = new CompletedRequest(userId, CPH.GetTwtichUserVarById<DrawRequest>(userId, "drawRequest"));
+        var completedRequest = new CompletedRequest(userId, CPH.GetTwitchUserVarById<DrawRequest>(userId, "drawRequest"));
         List<string> completedQueue = CPH.GetGlobalVar<List<string>>("completedQueue") ?? new List<string>();
         completedQueue.Add(userId);
         CPH.SetGlobalVar("completedQueue", completedQueue);
         BroadcastCompletedQueue();
 
         // mark request as completed
-        DrawRequest existingRequest = CPH.GetTwtichUserVarById<DrawRequest>(userId, "drawRequest");
+        DrawRequest existingRequest = CPH.GetTwitchUserVarById<DrawRequest>(userId, "drawRequest");
         if (existingRequest == null)
         {
             CPH.LogInfo($"Completing request failed. User {userId} has no existing draw request.");
             return false;
         }
         existingRequest.Completed = true;
-        CPH.SetTwitchUserVarById(userId, existingRequest);
+        CPH.SetTwitchUserVarById(userId, "drawRequest", existingRequest);
 
         return true;
     }
