@@ -1,0 +1,31 @@
+## .NET / C# Build Artifacts
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+
+## Visual Studio & OmniSharp Artifacts
+.vs/
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Roslyn / Build Logs
+*.log
+*.binlog
+project.lock.json
+project.assets.json
+
+## OS Metadata
+Thumbs.db
+[Dd]esktop.ini
+.DS_Store
+
+## Streamer.bot Local Backups & State (if any are saved locally)
+*.sbbackup

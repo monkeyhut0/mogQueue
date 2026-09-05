@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Streamer.bot runs on .NET Framework 4.8 -->
+    <TargetFramework>net48</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Path to your Streamer.bot installation folder -->
+    <Reference Include="Streamer.bot.Plugin.Interface">
+      <HintPath>C:\Path\To\Streamer.bot\Streamer.bot.Plugin.Interface.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    
+    <!-- Needed if referencing native Streamer.bot core methods or models -->
+    <Reference Include="Streamer.bot.Common">
+      <HintPath>C:\Path\To\Streamer.bot\Streamer.bot.Common.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+
+    <!-- Newtonsoft.Json comes packaged with Streamer.bot -->
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>C:\Path\To\Streamer.bot\Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>
