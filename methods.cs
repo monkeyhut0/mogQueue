@@ -187,8 +187,21 @@ public class CPHInline
 
     public bool RejectRequest(string userId)
     {
-
+        CPH.LogInfo($"Rejecting request for user {userId}.");
+        
+        // drawQueue
+        List<string> drawQueue = CPH.GetGlobalVar<List<string>>("drawQueue") ?? [];
+        if (!drawQueue.Contains(userId))
+        {
+            CPH.LogInfo($"Rejecting request failed. User {userId} not found in draw queue.");
+            return false;
+        }        
+        drawQueue.Remove(userId);
+        CPH.SetGlobalVar("drawQueue", drawQueue);
         BroadcastDrawQueue();
+
+        // clear request
+        CPH.SetTwitchUserVarById(userId, "drawRequest", null);
 
         return true;
     }
