@@ -87,8 +87,20 @@ public class CPHInline
         };
     }
 
-    public bool AddOrUpdate(string userId, string color, string prompt)
+    public bool AddOrUpdate()
     {
+        // args
+        if 
+        (
+            CPH.TryGetArg("userId", out string userId) ||
+            CPH.TryGetArg("color", out string color) ||
+            CPH.TryGetArg("prompt", out string prompt) 
+        ) 
+        {
+            CPH.LogWarn($"AddOrUpdate: Missing required arguments.");
+            return false;
+        }
+
         // Using List instead of Queue so that we can check user positions and arbitrary removal
         List<string> drawQueue = CPH.GetGlobalVar<List<string>>("drawQueue") ?? new List<string>();
 
@@ -164,8 +176,18 @@ public class CPHInline
         return true;
     }
 
-    public bool CompleteRequest(string userId)
+    public bool CompleteRequest()
     {
+        // args
+        if 
+        (
+            CPH.TryGetArg("userId", out string userId)
+        ) 
+        {
+            CPH.LogWarn($"CompleteRequest: Missing required arguments.");
+            return false;
+        }
+
         CPH.LogInfo($"Completing request for user {userId}.");
         
         // drawQueue
@@ -198,8 +220,18 @@ public class CPHInline
         return true;
     }
 
-    public bool RejectRequest(string userId)
+    public bool RejectRequest()
     {
+        // args
+        if 
+        (
+            CPH.TryGetArg("userId", out string userId)
+        ) 
+        {
+            CPH.LogWarn($"RejectRequest: Missing required arguments.");
+            return false;
+        }
+
         CPH.LogInfo($"Rejecting request for user {userId}.");
         
         // drawQueue
