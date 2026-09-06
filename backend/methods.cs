@@ -114,9 +114,9 @@ public class CPHInline
         // args
         if 
         (
-            CPH.TryGetArg("userId", out string userId) ||
-            CPH.TryGetArg("color", out string color) ||
-            CPH.TryGetArg("prompt", out string prompt) 
+            !CPH.TryGetArg("userId", out string userId) ||
+            !CPH.TryGetArg("color", out string color) ||
+            !CPH.TryGetArg("prompt", out string prompt) 
         ) 
         {
             CPH.LogWarn($"AddOrUpdate: Missing required arguments.");
