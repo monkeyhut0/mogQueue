@@ -326,18 +326,18 @@ public class CPHInline
         // args
         if
         (
-            !CPH.TryGetArg("data", out string data)
+            !CPH.TryGetArg("payload", out string payload)
         )
         {
-            CPH.LogWarn($"WebsocketHandler: Missing data.");
+            CPH.LogWarn($"WebsocketHandler: Missing payload.");
             return false;
         }
 
         // parse inbound envelope
-        InboundEnvelope? inbound = JsonConvert.DeserializeObject<InboundEnvelope>(data);
+        InboundEnvelope? inbound = JsonConvert.DeserializeObject<InboundEnvelope>(payload);
         if (inbound == null || inbound.Event == null)
         {
-            CPH.LogWarn($"WebsocketHandler: Invalid inbound envelope. Data: {data}");
+            CPH.LogWarn($"WebsocketHandler: Invalid inbound envelope. Data: {payload}");
             return false;
         }
 
