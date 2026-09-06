@@ -21,6 +21,7 @@ public class CPHInline
         return false;
     }
 
+    // made by gemini, prepends 'test_' to vars during tests
     private string GetVarKey(string key) => IsTestMode() ? $"test_{key}" : key;
 
     public enum BroadcastTarget
@@ -134,6 +135,7 @@ public class CPHInline
         ) 
         {
             CPH.LogWarn($"AddOrUpdate: Missing required arguments.");
+            CPH.RunAction("Error - Invalid Request");
             return false;
         }
 
@@ -149,9 +151,20 @@ public class CPHInline
             existingRequest.UpdateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             CPH.SetTwitchUserVarById(userId, GetVarKey("drawRequest"), existingRequest, !IsTestMode());
+            CPH.RunAction("Request Updated");
         }
         else
         {
+            // check if already completed
+            DrawRequest existingRequest = CPH.GetTwitchUserVarById<DrawRequest>(userId, GetVarKey("drawRequest"));
+            if (existingRequest is not null && existingRequest.Completed)
+            {
+                // request already completed
+                CPH.LogInfo("User request already completed");
+                CPH.RunAction("Error - Request Already Completed");
+                return false;
+            }
+
             // add new request
             DrawRequest newRequest = new DrawRequest
             {
@@ -164,6 +177,7 @@ public class CPHInline
 
             drawQueue.Add(userId);
             CPH.SetGlobalVar(GetVarKey("drawQueue"), drawQueue, !IsTestMode());
+            CPH.RunAction("Request Added");
         }
 
         BroadcastDrawQueue();
@@ -315,6 +329,7 @@ public class CPHInline
         string payloadJson = JsonConvert.SerializeObject(payload);
         CPH.WebsocketBroadcastJson(payloadJson);
 
+        CPH.RunAction("On Queue Pause");
         return true;
     }
 
@@ -332,6 +347,7 @@ public class CPHInline
         string payloadJson = JsonConvert.SerializeObject(payload);
         CPH.WebsocketBroadcastJson(payloadJson);
 
+        CPH.RunAction("On Queue Unpause");
         return true;
     }
 
