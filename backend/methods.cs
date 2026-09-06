@@ -64,7 +64,7 @@ public class CPHInline
     public class DrawRequest
     {
         [JsonProperty("color")]
-        public string Color { get; set; } = "white";
+        public string Color { get; set; } = "#FFFFFF";
 
         [JsonProperty("prompt")]
         public string Prompt { get; set; } = "";
