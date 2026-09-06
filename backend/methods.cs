@@ -326,7 +326,7 @@ public class CPHInline
         // args
         if
         (
-            CPH.TryGetArg("data", out string data)
+            !CPH.TryGetArg("data", out string data)
         )
         {
             CPH.LogWarn($"WebsocketHandler: Missing data.");
